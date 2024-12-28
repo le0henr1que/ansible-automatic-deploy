@@ -1,0 +1,67 @@
+- name: Configurar repositório Git
+  hosts: all
+  become: yes
+
+  vars:
+    git_repo: "https://{{ git_username }}:{{ git_password }}@dev.azure.com/GrupoAvenida/Projeto%20-%20Engine%20Fiscal/_git/Var3.EngineFiscal"
+    branch: "feat/xml-bitmap"
+    git_username: ""
+    git_password: ""
+
+  tasks:
+    - name: Instalar o Git
+      apt:
+        name: git
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Instalar o Git, Docker, Node.js e dependências
+      shell: |
+        # Atualizar pacotes
+        apt update && apt upgrade -y
+
+        # Instalar Git
+        apt install -y git
+
+        # Instalar Docker
+        # apt install -y apt-transport-https ca-certificates curl software-properties-common
+        # curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+        # add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+        # apt update
+        # apt install -y docker-ce docker-ce-cli containerd.io
+
+        # Instalar o CURL 
+        apt install -y curl
+
+        # Instalar Node.js
+        curl -sL https://deb.nodesource.com/setup_lts.x | bash -
+        apt install -y nodejs
+
+        # Instalar Make
+        # apt install -y make
+
+        # Clonar ou atualizar o repositório Git
+        git clone --branch {{ branch }} {{ git_repo }} /opt/repository || (cd /opt/repository && git pull origin {{ branch }})
+
+        # Instalar dependências Node.js
+        cd /opt/repository && npm install
+
+        # Rodar o comando make build
+        # cd /opt/repository && make build
+
+        # Adicionar as envs 
+        echo "export NODE_ENV=development" >> /opt/repository/.env
+        echo "export LOG_LEVEL=debug" >> /opt/repository/.env.development
+        echo "export PORT=3000" >> /opt/repository/.env.development
+        echo "export DB_HOST=10.150.88.126" >> /opt/repository/.env.development
+        echo "export DB_PORT=1521" >> /opt/repository/.env.development
+        echo "export DB_USERNAME=var" >> /opt/repository/.env.development
+        echo "export DB_PASSWORD=var" >> /opt/repository/.env.development
+        echo "export DB_DATABASE=teste" >> /opt/repository/.env.development
+        echo "export EMISSION_ENV=2" >> /opt/repository/.env.development
+        echo "export OS_ENV=linux" >> /opt/repository/.env.development
+        echo "export SERVICE_IP=10.150.88.163" >> /opt/repository/.env.development
+        echo "export WEBSERVICE_IP=10.150.88.163" >> /opt/repository/.env.development
+
+        # Adicionar as envs 
+        cd /opt/repository && npm start

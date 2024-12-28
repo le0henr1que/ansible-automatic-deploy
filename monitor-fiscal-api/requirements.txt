@@ -1,0 +1,7 @@
+﻿fastapi
+uvicorn
+pydantic
+motor
+pymongo
+schedule
+httpx

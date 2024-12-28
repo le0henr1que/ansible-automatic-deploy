@@ -1,0 +1,43 @@
+version: "3.8"
+
+services:
+  mongo:
+    image: mongo:latest
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - /data/db:/data/db
+    networks:
+      - monitor-fiscal-network
+
+  api:
+    build: ./monitor-fiscal-api
+    container_name: api
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mongo
+    environment:
+      - MONGO_URI=mongodb://mongo:27017
+    volumes:
+      - ./monitor-fiscal-api/hosts:/app/hosts
+    networks:
+      - monitor-fiscal-network
+
+  # app:
+  #   build: ./monitor-fiscal-app
+  #   container_name: app
+  #   ports:
+  #     - "5173:5173"
+  #   depends_on:
+  #     - api
+  #   networks:
+  #     - monitor-fiscal-network
+
+volumes:
+  mongo-data:
+
+networks:
+  monitor-fiscal-network:
+    driver: bridge

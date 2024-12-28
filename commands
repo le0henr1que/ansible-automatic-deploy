@@ -1,0 +1,12 @@
+ativer o ssh
+- service ssh start
+criar a chave de acesso
+- ssh-keygen
+copiar a chave para o servidor
+- ssh-copy-id
+para colocar a chave ssh
+- echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCnMIeSjEo6aqei4cuEa/j5BlE42WZh9fCi3GglkV4UkNNow6V5132AhPeA5Nq1ZR1Yut3D/gHkpkoMnOE3nyM76v4qdJ6cba7yz9tWwCOQdXYqFXb8xnUNsk1MXcFAn1yKPIMdMuZBdC8Hr0bQLgJTbI6h1PioczvT5lgQPT41zkAkr2N+xWhOyr/AGKUkgQ013yaWyXDTF33XXNpw13KbJ+e/PR4i1y98R46oQDSeiq4Ojlu4LEhDyxvSiz6PsPhECuww3KJf9l8KSo+BDwNXScAa1Pe20MZyj8aq1+KzAVvOE6ih+B1pFrviUhPIMyYM7N9TkhvPOS7D6ZXk3wiIgiNZ9uvRn5Ur258ivhrhGAMOGm1UCeI5NZpCjodv0OHvQKEC8heo0Y/aOZeXuqfQfzTKQ/XvE4mZMCwO+OnEyVZAo9NGTBeyFJtjlmlTeMbp9iCaKgbJPmkAxqFLilmdpEDzCKOwFWC/+OIJOi7skv4nJPYIj2qNGRdUsWc6VOM= root@85b64b4ffa9" >> ~/.ssh/authorized_keys && chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys
+apt update && apt install sudo
+echo $PATH
+
+7lpYv8JQJVULcgCo2oKvOLW032AQBq8oTxKjCoyB3PMszHVrSl8lJQQJ99ALACAAAAAACnHxAAAGAZDOUiE4

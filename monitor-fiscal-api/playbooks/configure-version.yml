@@ -1,0 +1,81 @@
+- name: Configurar repositório Git
+  hosts: "{{ target_hosts }}"
+  become: yes
+
+  vars:
+    git_repo: "https://{{ git_username }}:{{ git_password }}@dev.azure.com/GrupoAvenida/Projeto%20-%20Engine%20Fiscal/_git/Var3.EngineFiscal"
+    git_username: ""
+    git_password: ""
+
+  tasks:
+    - name: Instalar o Git
+      apt:
+        name: git
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Atualizar dependências
+      shell: |
+        # Atualizar pacotes
+        apt update && apt upgrade -y
+
+    - name: Instalar o Docker
+      shell: |
+        # Instalar dependências para o Docker
+        sudo apt install -y apt-transport-https ca-certificates curl software-properties-common gnupg lsb-release
+
+        # Adicionar a chave GPG do Docker
+        curl -fsSL https://download.docker.com/linux/debian/gpg | sudo tee /etc/apt/trusted.gpg.d/docker.asc
+
+        # Adicionar o repositório Docker
+        echo "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list
+
+        # Atualizar repositórios e instalar Docker
+        sudo apt update
+        sudo apt install -y docker-ce docker-ce-cli containerd.io
+        docker --version
+
+        # Instalar o Docker Compose
+        sudo curl -SL "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        sudo chmod +x /usr/local/bin/docker-compose
+        docker-compose --version
+      when: ansible_os_family == "Debian"
+
+    - name: Instalar o Git
+      shell: |
+        # Atualizar pacotes
+        apt update
+        # Instalar o Git
+        apt install -y git
+      when: ansible_os_family == "Debian"
+
+    - name: Instalar o CURL
+      shell: |
+        # Instalar o CURL 
+        apt install -y curl
+
+    - name: Instalar o Node.js
+      shell: |
+        # Instalar Node.js
+        curl -sL https://deb.nodesource.com/setup_lts.x | bash -
+        apt install -y nodejs
+
+    - name: Instalar o Make
+      shell: |
+        # Instalar Make
+        apt install -y make
+
+    - name: Clonar Repositório
+      shell: |
+        # Clonar ou atualizar o repositório Git
+        git clone --branch {{ branch_name }} {{ git_repo }} /opt/repository || (cd /opt/repository && git pull origin {{ branch_name }})
+
+    - name: Instalar dependências Node.js e rodar o comando make build
+      shell: |
+        # Instalar dependências Node.js
+        cd /opt/repository && npm install
+
+    - name: Rodar o comando make build
+      shell: |
+        # Rodar o comando make build
+        cd /opt/repository && make build
