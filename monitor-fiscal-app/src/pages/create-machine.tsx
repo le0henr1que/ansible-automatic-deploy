@@ -12,6 +12,7 @@ const schema = z.object({
   machineName: z.string().nonempty("Nome é obrigatório"),
   machineHost: z.string().nonempty("Host é obrigatório"),
   healthCheck: z.string().nonempty("Host é obrigatório"),
+  port: z.string().nonempty("Porta é obrigatório"),
 });
 
 export const CreateMachine = () => {
@@ -31,6 +32,7 @@ export const CreateMachine = () => {
         name: data.machineName,
         host: data.machineHost,
         isUp: false,
+        port: data.port,
         engineStatus: "error",
         version: "",
         ssh_key: "",
@@ -91,6 +93,27 @@ export const CreateMachine = () => {
             <p className="text-red-500">
               {errors.machineHost.message as string}
             </p>
+          )}
+        </div>
+        <div className="w-full flex flex-col gap-1 justify-start items-start">
+          <label htmlFor="machine-host" className="text-right">
+            Porta
+          </label>
+          <Controller
+            name="port"
+            control={control}
+            defaultValue=""
+            render={({ field }) => (
+              <Input
+                {...field}
+                id="machine-host"
+                placeholder="Ex: 3333"
+                className="col-span-3"
+              />
+            )}
+          />
+          {errors.port && (
+            <p className="text-red-500">{errors.port.message as string}</p>
           )}
         </div>
         <div className="w-full flex flex-col gap-1 justify-start items-start">

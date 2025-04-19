@@ -23,7 +23,11 @@ export const ModalMachine = ({ modal }: any) => {
   const [copied, setCopied] = useState(false);
   const command = `apt update && apt install -y sudo && echo $PATH && service ssh start && mkdir -p ~/.ssh && echo "${
     (modal as any)?.ssh_key
-  }" >> ~/.ssh/authorized_keys && chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys`;
+  }" >> ~/.ssh/authorized_keys && chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys && curl -X PUT "http://localhost:8000/machines/${
+    (modal as any)?.id
+  }/status" -H "Content-Type: application/json" -d '{"isUp": true}' || curl -X PUT "http://localhost:8000/machines/${
+    (modal as any)?.id
+  }/status" -H "Content-Type: application/json" -d '{"isUp": false}'`;
   const copyToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(command);
@@ -34,25 +38,13 @@ export const ModalMachine = ({ modal }: any) => {
     }
   };
 
-  const initialLogs = [
-    { timestamp: "2023-05-20T10:00:00Z", message: "System initialized" },
-  ];
+  const [isDeploying, setIsDeploying] = useState(false);
+  const [logMessages, setLogMessages] = useState<string[]>([]);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      const messages = ["Checking system status..."];
-      const randomMessage =
-        messages[Math.floor(Math.random() * messages.length)];
-      document.dispatchEvent(
-        new CustomEvent("addLog", { detail: randomMessage })
-      );
-    }, 5000);
-
-    return () => clearInterval(timer);
-  }, []);
   const getStatusColor = (isUp: boolean) => {
     return isUp ? "bg-green-500" : "bg-red-500";
   };
+
   const { handleModal } = useDialogModal();
   const [deleteMachine, { isLoading: isDeleting }] = useDeleteMachineMutation();
 
@@ -65,6 +57,7 @@ export const ModalMachine = ({ modal }: any) => {
       console.error(err);
     }
   };
+
   const [testMachine, { isLoading: isLoadingTest }] = useTestMachineMutation(
     {}
   );
@@ -75,7 +68,7 @@ export const ModalMachine = ({ modal }: any) => {
       handleModal({ isOpen: false });
     } catch (err) {
       alert(
-        "Ops! Ocorreu um erro ao testar a conexão. certifique-se de que o servidor está online e a chave SSH foi configurada corretamente."
+        "Ops! Ocorreu um erro ao testar a conexão. Certifique-se de que o servidor está online e a chave SSH foi configurada corretamente."
       );
       console.error(err);
     }
@@ -86,19 +79,44 @@ export const ModalMachine = ({ modal }: any) => {
 
   const handleConfigVersion = async (id: string) => {
     try {
-      await configureVersionMutation({
-        id,
-        branch: "feat/xml-bitmap",
-      }).unwrap();
-      alert("Pong! Teste de conexão realizado com sucesso!");
-      handleModal({ isOpen: false });
+      setIsDeploying(true);
+      setLogMessages([]);
+
+      const ws = new WebSocket(
+        `ws://localhost:8000/ws/machines/${id}/config?branch_name=main`
+      );
+
+      ws.onopen = () => {
+        setLogMessages((prev) => [...prev, "[WebSocket] Conectado."]);
+      };
+
+      ws.onmessage = (event) => {
+        setLogMessages((prev) => [...prev, event.data]);
+        if (event.data.includes("✅ Deployment completed successfully")) {
+          setIsDeploying(false);
+          handleModal({ isOpen: false });
+        }
+      };
+
+      ws.onerror = (err) => {
+        console.error("WebSocket error:", err);
+        setLogMessages((prev) => [...prev, "[WebSocket] Erro na conexão."]);
+        setIsDeploying(false);
+      };
+
+      ws.onclose = () => {
+        setLogMessages((prev) => [...prev, "[WebSocket] Conexão encerrada."]);
+        setIsDeploying(false);
+      };
     } catch (err) {
       alert(
-        "Ops! Ocorreu um erro ao testar a conexão. certifique-se de que o servidor está online e a chave SSH foi configurada corretamente."
+        "Ops! Ocorreu um erro ao tentar iniciar a configuração da versão. Verifique a conexão."
       );
       console.error(err);
+      setIsDeploying(false);
     }
   };
+
   return (
     <div className="grid gap-4 py-4">
       <div>
@@ -117,7 +135,8 @@ export const ModalMachine = ({ modal }: any) => {
         </Badge>
       </div>
       <div>
-        <strong>Engine Fiscal:</strong> {(modal as any)?.engineStatus as any}
+        <strong>Status da aplicação:</strong>{" "}
+        {(modal as any)?.engineStatus as any}
       </div>
 
       {(modal as any)?.status !== "CONECTADO" && (
@@ -163,19 +182,24 @@ export const ModalMachine = ({ modal }: any) => {
             {isLoadingTest ? "Testando conexão..." : "Testar conexão"}
           </Button>
         )}
-        <Button onClick={() => handleConfigVersion(modal.id)}>
-          {isLoadingConfigureMutation
-            ? "Configurando versão..."
-            : "Implementar uma nova versão branch: feat/xml-bitmap"}
+        <Button
+          onClick={() => handleConfigVersion(modal.id)}
+          disabled={isDeploying}
+        >
+          {isDeploying
+            ? "Implementando versão..."
+            : "Implementar uma nova versão branch: main"}
         </Button>
       </div>
-      <div>
-        <div>
-          {(modal as any)?.status !== "CONECTADO" && (
-            <LogDisplay initialLogs={initialLogs} />
-          )}
+
+      {isDeploying && (
+        <div className="bg-black text-green-400 font-mono text-sm p-4 rounded-md h-64 overflow-y-auto mt-4">
+          {logMessages.map((msg, idx) => (
+            <div key={idx}>{msg}</div>
+          ))}
         </div>
-      </div>
+      )}
+
       <div className="flex w-full justify-end gap-4">
         <Button
           variant="destructive"
@@ -183,7 +207,7 @@ export const ModalMachine = ({ modal }: any) => {
             handleDeleteMachine(modal.id);
           }}
         >
-          {isDeleting ? "Excluindo maquina..." : "Excluir maquina"}
+          {isDeleting ? "Excluindo máquina..." : "Excluir máquina"}
         </Button>
       </div>
     </div>

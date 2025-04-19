@@ -3,9 +3,7 @@
   become: yes
 
   vars:
-    git_repo: "https://{{ git_username }}:{{ git_password }}@dev.azure.com/GrupoAvenida/Projeto%20-%20Engine%20Fiscal/_git/Var3.EngineFiscal"
-    git_username: ""
-    git_password: ""
+    git_repo: "https://github.com/le0henr1que/ping-pong.git"
 
   tasks:
     - name: Instalar o Git
@@ -70,12 +68,25 @@
         # Clonar ou atualizar o repositório Git
         git clone --branch {{ branch_name }} {{ git_repo }} /opt/repository || (cd /opt/repository && git pull origin {{ branch_name }})
 
+    - name: Copiar Makefile
+      copy:
+        src: Makefile
+        dest: /opt/repository/Makefile
+        mode: "0644"
+
     - name: Instalar dependências Node.js e rodar o comando make build
       shell: |
         # Instalar dependências Node.js
         cd /opt/repository && npm install
 
-    - name: Rodar o comando make build
+    - name: Rodar o comando npm run start
       shell: |
-        # Rodar o comando make build
-        cd /opt/repository && make build
+        # Rodar o comando npm run start
+        cd /opt/repository && npm run start || (echo "❌ Erro ao executar make build" && exit 1)
+      register: make_build_result
+      ignore_errors: yes
+
+    - name: Verificar resultado do npm run start
+      fail:
+        msg: "❌ Falha ao executar npm run start"
+      when: make_build_result.rc != 0
